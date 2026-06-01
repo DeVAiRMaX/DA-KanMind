@@ -86,9 +86,3 @@ Authorization: Token <your-token>
 |--------|----------|:---:|
 | GET, POST | `/api/tasks/<task_id>/comments/` | Yes |
 | DELETE | `/api/tasks/<task_id>/comments/<id>/` | Yes |
-
-## Running Tests
-
-```bash
-python manage.py test
-```
