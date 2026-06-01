@@ -1,10 +1,11 @@
 from django.contrib.auth.models import User
 from rest_framework import generics, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from ..models import Board, Comment, Task
-from .permissions import IsBoardMemberOrOwner, IsCommentAuthor
+from .permissions import IsBoardMemberOrOwner, IsCommentAuthor, IsTaskBoardMember
 from .serializers import (BoardDetailSerializer, BoardListSerializer,
                           BoardUpdateSerializer, CommentSerializer,
                           TaskSerializer)
@@ -85,6 +86,8 @@ class TaskCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         board_id = self.request.data.get('board')
         board = Board.objects.get(pk=board_id)
+        if board.owner != self.request.user and self.request.user not in board.members.all():
+            raise PermissionDenied()
         assignee_id = self.request.data.get('assignee_id')
         reviewer_id = self.request.data.get('reviewer_id')
         assignee = User.objects.get(pk=assignee_id) if assignee_id else None
@@ -101,7 +104,7 @@ class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieves, updates, or deletes a single task."""
 
     queryset = Task.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsTaskBoardMember]
     serializer_class = TaskSerializer
 
     def _resolve_user(self, data, key, current):
@@ -133,12 +136,18 @@ class CommentListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CommentSerializer
 
+    def _get_task_or_403(self):
+        task = Task.objects.get(pk=self.kwargs['task_id'])
+        board = task.board
+        if board.owner != self.request.user and self.request.user not in board.members.all():
+            raise PermissionDenied()
+        return task
+
     def get_queryset(self):
-        return Comment.objects.filter(task_id=self.kwargs['task_id'])
+        return Comment.objects.filter(task=self._get_task_or_403())
 
     def perform_create(self, serializer):
-        task = Task.objects.get(pk=self.kwargs['task_id'])
-        serializer.save(author=self.request.user, task=task)
+        serializer.save(author=self.request.user, task=self._get_task_or_403())
 
 
 class CommentDeleteView(generics.DestroyAPIView):

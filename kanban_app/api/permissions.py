@@ -8,6 +8,14 @@ class IsBoardMemberOrOwner(BasePermission):
         return obj.owner == request.user or request.user in obj.members.all()
 
 
+class IsTaskBoardMember(BasePermission):
+    """Grants access only to members or the owner of the task's board."""
+
+    def has_object_permission(self, request, view, obj):
+        board = obj.board
+        return board.owner == request.user or request.user in board.members.all()
+
+
 class IsCommentAuthor(BasePermission):
     """Grants access only to the author of the comment."""
 
