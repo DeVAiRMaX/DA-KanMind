@@ -10,6 +10,8 @@ from .serializers import RegistrationSerializer
 
 
 class RegistrationView(APIView):
+    """Creates a new user and returns an auth token."""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -27,6 +29,8 @@ class RegistrationView(APIView):
 
 
 class LoginView(APIView):
+    """Authenticates a user by email/password and returns an auth token."""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -49,6 +53,8 @@ class LoginView(APIView):
 
 
 class EmailCheckView(APIView):
+    """Returns user id and name for a given email address."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

@@ -5,6 +5,8 @@ from ..models import Board, Comment, Task
 
 
 class MemberSerializer(serializers.Serializer):
+    """Serializes a user as a board member with id, email, and fullname."""
+
     id = serializers.IntegerField()
     email = serializers.EmailField()
     fullname = serializers.SerializerMethodField()
@@ -17,6 +19,8 @@ class MemberSerializer(serializers.Serializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Serializes a comment with author name instead of author id."""
+
     author = serializers.SerializerMethodField()
 
     class Meta:
@@ -28,6 +32,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
+    """Serializes a task; accepts assignee_id/reviewer_id for writes, returns nested objects for reads."""
+
     assignee = MemberSerializer(read_only=True)
     reviewer = MemberSerializer(read_only=True)
     assignee_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
@@ -48,6 +54,8 @@ class TaskSerializer(serializers.ModelSerializer):
 
 
 class BoardListSerializer(serializers.ModelSerializer):
+    """Serializes a board for list view with aggregated counts."""
+
     member_count = serializers.SerializerMethodField()
     ticket_count = serializers.SerializerMethodField()
     tasks_to_do_count = serializers.SerializerMethodField()
@@ -75,6 +83,8 @@ class BoardListSerializer(serializers.ModelSerializer):
 
 
 class BoardDetailSerializer(serializers.ModelSerializer):
+    """Serializes a board for detail view including all members and tasks."""
+
     owner_id = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
     tasks = TaskSerializer(many=True, read_only=True)
@@ -94,6 +104,8 @@ class BoardDetailSerializer(serializers.ModelSerializer):
 
 
 class BoardUpdateSerializer(serializers.ModelSerializer):
+    """Serializes a board for PATCH requests; accepts member ids."""
+
     members = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all())
     owner_data = MemberSerializer(source='owner', read_only=True)
     members_data = MemberSerializer(source='members', many=True, read_only=True)

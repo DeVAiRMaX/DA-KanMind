@@ -4,14 +4,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from ..models import Board, Comment, Task
-from .permissions import (IsBoardMemberOrOwner, IsBoardOwner,
-                          IsCommentAuthor, IsTaskCreatorOrBoardOwner)
+from .permissions import IsBoardMemberOrOwner, IsCommentAuthor
 from .serializers import (BoardDetailSerializer, BoardListSerializer,
                           BoardUpdateSerializer, CommentSerializer,
                           TaskSerializer)
 
 
 class BoardListCreateView(generics.ListCreateAPIView):
+    """Lists all boards the user owns or is a member of; creates a new board."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = BoardListSerializer
 
@@ -26,6 +27,8 @@ class BoardListCreateView(generics.ListCreateAPIView):
 
 
 class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieves, updates, or deletes a single board."""
+
     queryset = Board.objects.all()
     permission_classes = [IsAuthenticated, IsBoardMemberOrOwner]
 
@@ -54,6 +57,8 @@ class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class AssignedTasksView(generics.ListAPIView):
+    """Lists all tasks assigned to the current user."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = TaskSerializer
 
@@ -62,6 +67,8 @@ class AssignedTasksView(generics.ListAPIView):
 
 
 class ReviewingTasksView(generics.ListAPIView):
+    """Lists all tasks where the current user is the reviewer."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = TaskSerializer
 
@@ -70,6 +77,8 @@ class ReviewingTasksView(generics.ListAPIView):
 
 
 class TaskCreateView(generics.CreateAPIView):
+    """Creates a new task on a board."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = TaskSerializer
 
@@ -89,22 +98,21 @@ class TaskCreateView(generics.CreateAPIView):
 
 
 class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieves, updates, or deletes a single task."""
+
     queryset = Task.objects.all()
     permission_classes = [IsAuthenticated]
     serializer_class = TaskSerializer
 
+    def _resolve_user(self, data, key, current):
+        if key not in data:
+            return current
+        return User.objects.get(pk=data[key]) if data[key] else None
+
     def partial_update(self, request, *args, **kwargs):
         task = self.get_object()
-        if 'assignee_id' in request.data:
-            aid = request.data['assignee_id']
-            assignee = User.objects.get(pk=aid) if aid else None
-        else:
-            assignee = task.assignee
-        if 'reviewer_id' in request.data:
-            rid = request.data['reviewer_id']
-            reviewer = User.objects.get(pk=rid) if rid else None
-        else:
-            reviewer = task.reviewer
+        assignee = self._resolve_user(request.data, 'assignee_id', task.assignee)
+        reviewer = self._resolve_user(request.data, 'reviewer_id', task.reviewer)
         serializer = TaskSerializer(task, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save(assignee=assignee, reviewer=reviewer)
@@ -120,6 +128,8 @@ class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
+    """Lists all comments for a task; creates a new comment."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = CommentSerializer
 
@@ -132,6 +142,8 @@ class CommentListCreateView(generics.ListCreateAPIView):
 
 
 class CommentDeleteView(generics.DestroyAPIView):
+    """Deletes a comment; only the author is allowed."""
+
     permission_classes = [IsAuthenticated, IsCommentAuthor]
     serializer_class = CommentSerializer
 

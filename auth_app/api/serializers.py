@@ -3,6 +3,8 @@ from rest_framework import serializers
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    """Validates and creates a new user account."""
+
     fullname = serializers.CharField(write_only=True)
     repeated_password = serializers.CharField(write_only=True)
 
@@ -32,6 +34,3 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return user
 
 
-class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
