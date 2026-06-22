@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -85,7 +86,7 @@ class TaskCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         board_id = self.request.data.get('board')
-        board = Board.objects.get(pk=board_id)
+        board = get_object_or_404(Board, pk=board_id)
         if board.owner != self.request.user and self.request.user not in board.members.all():
             raise PermissionDenied()
         assignee_id = self.request.data.get('assignee_id')
@@ -137,7 +138,7 @@ class CommentListCreateView(generics.ListCreateAPIView):
     serializer_class = CommentSerializer
 
     def _get_task_or_403(self):
-        task = Task.objects.get(pk=self.kwargs['task_id'])
+        task = get_object_or_404(Task, pk=self.kwargs['task_id'])
         board = task.board
         if board.owner != self.request.user and self.request.user not in board.members.all():
             raise PermissionDenied()
